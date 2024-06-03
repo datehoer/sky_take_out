@@ -79,7 +79,6 @@ public class EmployeeController {
         employeeService.save(employeeDTO);
         return Result.success();
     }
-
     @GetMapping("/page")
     @ApiOperation(value = "分页查询员工")
     public Result<PageResult> page(EmployeePageQueryDTO employeePageQueryDTO){
@@ -92,6 +91,21 @@ public class EmployeeController {
     public Result<String> startOrStop(@RequestParam Long id, @PathVariable Integer status){
         log.info("修改员工状态：id={}, status={}", id, status);
         employeeService.startOrStop(id, status);
+        return Result.success();
+    }
+    @GetMapping("{id}")
+    @ApiOperation(value = "查询员工")
+    public Result<Employee> getByUsername(@PathVariable Long id){
+        log.info("查询员工：id={}", id);
+        Employee employee = employeeService.getById(id);
+        employee.setPassword(null);
+        return Result.success(employee);
+    }
+    @PutMapping()
+    @ApiOperation(value = "修改员工")
+    public Result<String> update(@RequestBody EmployeeDTO employeeDTO){
+        log.info("修改员工：{}", employeeDTO);
+        employeeService.update(employeeDTO);
         return Result.success();
     }
 }
