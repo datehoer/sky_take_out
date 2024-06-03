@@ -1,17 +1,21 @@
 package com.sky.service.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
+import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountExistException;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
+import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -74,4 +79,23 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeMapper.save(employee);
     }
 
+    public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
+        int pageNum = employeePageQueryDTO.getPage();
+        if (pageNum <= 0) {
+            pageNum = 1;
+        }
+        int PageSize = employeePageQueryDTO.getPageSize();
+        if (PageSize < 10) {
+            PageSize = 10;
+        } else if (PageSize > 10) {
+            PageSize = 10;
+        }
+        employeePageQueryDTO.setPage(pageNum);
+        employeePageQueryDTO.setPageSize(PageSize);
+        PageHelper.startPage(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
+        Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
+        long total = page.getTotal();
+        List<Employee> result = page.getResult();
+        return new PageResult(total, result);
+    }
 }
