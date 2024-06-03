@@ -98,4 +98,18 @@ public class EmployeeServiceImpl implements EmployeeService {
         List<Employee> result = page.getResult();
         return new PageResult(total, result);
     }
+
+    public void startOrStop(Long id, Integer status) {
+//        Employee employee = new Employee();
+//        employee.setId(id);
+//        employeePageQueryDTO.setStatus(status);
+        Long empId = BaseContext.getCurrentId();
+        Employee build = Employee.builder()
+                .id(id)
+                .status(status)
+                .updateUser(empId)
+                .updateTime(LocalDateTime.now())
+                .build();
+        employeeMapper.update(build);
+    }
 }
