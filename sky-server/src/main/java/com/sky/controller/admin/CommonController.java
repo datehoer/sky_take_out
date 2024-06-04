@@ -1,8 +1,7 @@
 package com.sky.controller.admin;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.sky.constant.MessageConstant;
 import com.sky.result.Result;
-import com.sky.utils.AliOssUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -12,24 +11,21 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.Request;
 import okhttp3.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/admin/common")
 @Slf4j
 @Api(tags = "通用接口")
 public class CommonController {
-    private final AliOssUtil aliOssUtil;
-
-    public CommonController(AliOssUtil aliOssUtil) {
-        this.aliOssUtil = aliOssUtil;
-    }
+    @Value("${sky.smms.token}")
+    private String smmsToken;
 
     @PostMapping("/upload")
     @ApiOperation("上传图片")
@@ -38,10 +34,6 @@ public class CommonController {
         try{
             String originalFilename = file.getOriginalFilename();
             if (originalFilename != null) {
-                String substring = originalFilename.substring(originalFilename.lastIndexOf("."));
-                String uuid = UUID.randomUUID() + substring;
-//                String upload = aliOssUtil.upload(multipartFile.getBytes(), uuid);
-//                return Result.success(upload);
                 String smmsUploadUrl = uploadToSmms(file);
                 if (smmsUploadUrl != null) {
                     return Result.success(smmsUploadUrl);
@@ -64,18 +56,22 @@ public class CommonController {
             .build();
         Request request = new Request.Builder()
                 .url("https://smms.app/api/v2/upload")
-                .addHeader("Authorization", "Basic F1eK6ESsMUIrBOT6GGKHISfNOvN48uYk")
+                .addHeader("Authorization", "Basic " + smmsToken)
                 .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
                 .post(requestBody)
                 .build();
-        log.info("上传请求：{}", request);
         Response response = client.newCall(request).execute();
-        String responseBody = response.body().string();
-        log.info("响应代码：{}", response.code());
-        log.info("响应消息：{}", responseBody);
+        String responseBody = null;
+        if (response.body() != null) {
+            responseBody = response.body().string();
+        }
         if (response.isSuccessful()) {
             JSONObject jsonObject = JSONObject.parseObject(responseBody);
-            if (jsonObject.getBoolean("success")) {
+            if (jsonObject == null){
+                log.error("SMMS上传失败，响应为空");
+                return null;
+            }
+            if (jsonObject.getBooleanValue("success")){
                 return jsonObject.getJSONObject("data").getString("url");
             } else if (Objects.equals(jsonObject.getString("code"), "image_repeated")) {
                 return jsonObject.getString("images");
