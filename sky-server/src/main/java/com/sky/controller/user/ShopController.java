@@ -21,7 +21,8 @@ public class ShopController {
     @GetMapping("/status")
     @ApiOperation("获取店铺状态")
     public Result<Integer> getStatus(){
-        Integer status = (Integer) redisTemplate.opsForValue().get(SHOP_STATUS);
-        return Result.success(status);
+        String statusString = (String) redisTemplate.opsForValue().get(SHOP_STATUS);
+        Integer statusInt = Integer.parseInt(statusString);
+        return Result.success(statusInt);
     }
 }
